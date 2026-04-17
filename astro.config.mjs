@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://sound-blog.example',
+  site: 'https://sound-blog-ten.vercel.app',
   integrations: [sitemap()],
   markdown: {
     shikiConfig: {
