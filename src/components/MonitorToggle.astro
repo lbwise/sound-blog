@@ -1,0 +1,50 @@
+---
+// Tiny Web Audio monitor tone. Quiet 440Hz sine, fades to avoid clicks.
+---
+
+<button class="monitor" id="monitor-btn" aria-pressed="false" aria-label="Toggle 440Hz monitor tone" title="Toggle 440Hz monitor tone">
+  <span class="dot" aria-hidden="true"></span>
+  <span>Monitor</span>
+</button>
+
+<script>
+  const btn = document.getElementById('monitor-btn');
+  if (btn) {
+    let ctx: AudioContext | null = null;
+    let osc: OscillatorNode | null = null;
+    let gain: GainNode | null = null;
+
+    const stopTone = () => {
+      if (!ctx || !osc || !gain) return;
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.08);
+      osc.stop(t + 0.1);
+      osc = null;
+      gain = null;
+    };
+
+    btn.addEventListener('click', () => {
+      const isOn = btn.getAttribute('aria-pressed') === 'true';
+      if (!isOn) {
+        ctx = ctx || new (window.AudioContext || (window as any).webkitAudioContext)();
+        osc = ctx.createOscillator();
+        gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 440;
+        gain.gain.value = 0;
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        const t = ctx.currentTime;
+        gain.gain.linearRampToValueAtTime(0.04, t + 0.12);
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        stopTone();
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    });
+
+    window.addEventListener('beforeunload', stopTone);
+  }
+</script>

@@ -1,0 +1,25 @@
+---
+import Waveform from './Waveform.astro';
+import MonitorToggle from './MonitorToggle.astro';
+
+const { pathname } = Astro.url;
+const isActive = (href: string) =>
+  href === '/' ? pathname === '/' : pathname.startsWith(href);
+---
+
+<header class="site-head">
+  <div class="wrap--wide site-head__inner">
+    <a class="brand" href="/" aria-label="sound/blog home">
+      sound<span class="brand__slash">/</span>blog
+    </a>
+
+    <Waveform />
+
+    <nav class="nav" aria-label="Primary">
+      <a href="/" aria-current={isActive('/') ? 'page' : undefined}>Journal</a>
+      <a href="/builds" aria-current={isActive('/builds') ? 'page' : undefined}>Builds</a>
+      <a href="/about" aria-current={isActive('/about') ? 'page' : undefined}>About</a>
+      <MonitorToggle />
+    </nav>
+  </div>
+</header>

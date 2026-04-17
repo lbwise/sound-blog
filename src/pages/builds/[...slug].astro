@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const builds = await getCollection('builds');
+  return builds.map((build) => ({
+    params: { slug: build.id },
+    props: { build },
+  }));
+}
+
+const { build } = Astro.props;
+const { Content } = await render(build);
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase();
+---
+
+<Base title={`${build.data.title} · sound/blog`} description={build.data.summary}>
+  <article class="article wrap">
+    <header class="article__head reveal">
+      <div class="article__eyebrow">
+        <span class="eyebrow" style="color: var(--accent)">Build</span>
+        <span class="eyebrow">·</span>
+        <span class="eyebrow">Started {fmtDate(build.data.started)}</span>
+        <span class="eyebrow">·</span>
+        <span class="eyebrow">{build.data.status === 'wip' ? 'In progress' : build.data.status === 'shipped' ? 'Shipped' : 'Paused'}</span>
+      </div>
+      <h1 class="article__title">{build.data.title}</h1>
+      {build.data.summary && <p class="article__lede">{build.data.summary}</p>}
+      {(build.data.repo || build.data.demo) && (
+        <p class="eyebrow" style="margin-top: var(--space-4); display: flex; gap: var(--space-5)">
+          {build.data.repo && <a href={build.data.repo}>Source →</a>}
+          {build.data.demo && <a href={build.data.demo}>Demo →</a>}
+        </p>
+      )}
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <nav class="article__foot">
+      <a href="/builds">← All builds</a>
+      <a href="/">Journal</a>
+    </nav>
+  </article>
+</Base>

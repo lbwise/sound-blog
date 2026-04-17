@@ -1,0 +1,66 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', (p) => !p.data.draft);
+  const sorted = posts.sort((a, b) => +a.data.date - +b.data.date);
+  return sorted.map((post, i) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      prev: sorted[i - 1] ?? null,
+      next: sorted[i + 1] ?? null,
+      index: i + 1,
+    },
+  }));
+}
+
+const { post, prev, next, index } = Astro.props;
+const { Content, remarkPluginFrontmatter } = await render(post);
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
+const num = String(post.data.number ?? index).padStart(3, '0');
+---
+
+<Base title={`${post.data.title} · sound/blog`} description={post.data.summary}>
+  <article class="article wrap">
+    <header class="article__head reveal">
+      <div class="article__eyebrow">
+        <span class="eyebrow">№ {num}</span>
+        <span class="eyebrow" style="color: var(--accent)">·</span>
+        <time class="eyebrow" datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>
+        {post.data.tags.length > 0 && (
+          <>
+            <span class="eyebrow" style="color: var(--accent)">·</span>
+            <span class="eyebrow">{post.data.tags.join(' / ')}</span>
+          </>
+        )}
+      </div>
+      <h1 class="article__title">{post.data.title}</h1>
+      {post.data.summary && <p class="article__lede">{post.data.summary}</p>}
+      {post.data.audio && (
+        <figure style="margin-top: var(--space-5)">
+          <audio controls src={post.data.audio} preload="none"></audio>
+          <figcaption>Audio accompanying this post</figcaption>
+        </figure>
+      )}
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <nav class="article__foot" aria-label="Post navigation">
+      <span>
+        {prev ? <a href={`/posts/${prev.id}/`}>← {prev.data.title}</a> : <span style="opacity: 0.5">← start of log</span>}
+      </span>
+      <a href="/">Index</a>
+      <span>
+        {next ? <a href={`/posts/${next.id}/`}>{next.data.title} →</a> : <span style="opacity: 0.5">latest →</span>}
+      </span>
+    </nav>
+  </article>
+</Base>
