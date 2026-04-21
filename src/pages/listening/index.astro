@@ -1,0 +1,65 @@
+---
+import Base from '../../layouts/Base.astro';
+import AlbumCard from '../../components/AlbumCard.astro';
+import { getCollection } from 'astro:content';
+
+const listens = (await getCollection('listens')).sort(
+  (a, b) => +b.data.listened - +a.data.listened,
+);
+
+const current = listens.find((l) => l.data.current);
+const rest = current ? listens.filter((l) => l.id !== current.id) : listens;
+
+const avg =
+  listens.length > 0
+    ? (listens.reduce((s, l) => s + l.data.score, 0) / listens.length).toFixed(1)
+    : null;
+---
+
+<Base title="Listening · sound/blog" description="Albums I'm listening to, with thoughts and a score.">
+  <section class="hero wrap reveal">
+    <p class="eyebrow hero__eyebrow">
+      The Wall · {String(listens.length).padStart(2, '0')} albums{avg ? ` · avg ${avg}` : ''}
+    </p>
+    <h1 class="hero__title">Stuff I'm <em>listening</em> to.</h1>
+    <p class="hero__lede">
+      A running wall of albums. Cover art, a score out of ten (to one decimal, because why
+      not), a few thoughts. Scroll the wall, click a cover.
+    </p>
+  </section>
+
+  <div class="wrap--wide">
+    {current && (
+      <>
+        <div class="section-rule">
+          <span class="section-rule__label">Now Spinning</span>
+          <span class="section-rule__line"></span>
+          <svg class="section-rule__glyph" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M 0 6 Q 3 0 6 6 T 12 6 T 18 6 T 24 6" />
+          </svg>
+        </div>
+        <div class="wall wall--featured">
+          <AlbumCard entry={current} featured />
+        </div>
+      </>
+    )}
+
+    <div class="section-rule">
+      <span class="section-rule__label">The Wall</span>
+      <span class="section-rule__line"></span>
+      <svg class="section-rule__glyph" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M 0 6 Q 3 0 6 6 T 12 6 T 18 6 T 24 6" />
+      </svg>
+    </div>
+
+    {rest.length > 0 ? (
+      <div class="wall reveal">
+        {rest.map((entry) => <AlbumCard entry={entry} />)}
+      </div>
+    ) : (
+      <p class="entry__summary" style="padding-block: 2rem">
+        No albums yet. Drop a <code>.md</code> file in <code>src/content/listens/</code> and it'll appear here.
+      </p>
+    )}
+  </div>
+</Base>

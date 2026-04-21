@@ -1,0 +1,62 @@
+---
+interface Props {
+  url: string;
+  height?: number;
+  label?: string;
+}
+
+const { url, height = 600, label } = Astro.props;
+
+type Resolved =
+  | { kind: 'iframe'; src: string }
+  | { kind: 'colab'; src: string }
+  | { kind: 'link'; src: string };
+
+function resolve(u: string): Resolved {
+  if (u.includes('colab.research.google.com')) return { kind: 'colab', src: u };
+  if (u.includes('nbviewer.org') || u.includes('nbviewer.jupyter.org')) return { kind: 'iframe', src: u };
+  const gh = u.match(/github\.com\/(.+\.ipynb)(?:[#?].*)?$/);
+  if (gh) return { kind: 'iframe', src: `https://nbviewer.org/github/${gh[1]}` };
+  if (/\.ipynb(?:[#?].*)?$/.test(u)) {
+    const stripped = u.replace(/^https?:\/\//, '');
+    return { kind: 'iframe', src: `https://nbviewer.org/url/${stripped}` };
+  }
+  return { kind: 'link', src: u };
+}
+
+const resolved = resolve(url);
+---
+
+{resolved.kind === 'iframe' && (
+  <figure class="embed embed--notebook">
+    <iframe
+      src={resolved.src}
+      height={height}
+      loading="lazy"
+      sandbox="allow-scripts allow-same-origin allow-popups"
+      title={label ?? 'Jupyter notebook'}
+    ></iframe>
+    <figcaption>
+      <a href={url} target="_blank" rel="noopener noreferrer">{label ?? 'Open notebook source ↗'}</a>
+    </figcaption>
+  </figure>
+)}
+
+{resolved.kind === 'colab' && (
+  <a class="gh-card gh-card--colab" href={resolved.src} target="_blank" rel="noopener noreferrer">
+    <span class="gh-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+        <path d="M4 12a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm8-6a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/>
+      </svg>
+    </span>
+    <span class="gh-card__body">
+      <span class="gh-card__title">{label ?? 'Open in Google Colab'}</span>
+      <span class="gh-card__meta"><span>notebook</span><span>colab.research.google.com</span></span>
+    </span>
+    <span class="gh-card__arrow" aria-hidden="true">↗</span>
+  </a>
+)}
+
+{resolved.kind === 'link' && (
+  <p><a href={resolved.src} target="_blank" rel="noopener noreferrer">{label ?? resolved.src}</a></p>
+)}

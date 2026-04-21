@@ -1,0 +1,82 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+import { lookupAppleMusic, toEmbedUrl } from '../../lib/apple-music';
+import { postComponents } from '../../lib/post-components';
+
+export async function getStaticPaths() {
+  const listens = await getCollection('listens');
+  return listens.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+
+let cover = d.cover ?? null;
+if (!cover && d.appleMusic) {
+  const info = await lookupAppleMusic(d.appleMusic);
+  if (info?.artwork) cover = info.artwork;
+}
+
+const fmtDate = (date: Date) =>
+  date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
+const score = d.score.toFixed(1);
+const embed = d.appleMusic ? toEmbedUrl(d.appleMusic) : null;
+---
+
+<Base title={`${d.artist} — ${d.album} · sound/blog`} description={`${d.artist} — ${d.album} (${score}/10)`}>
+  <article class="review wrap--wide reveal">
+    <div class="review__head">
+      <div class="review__art">
+        {cover ? (
+          <img src={cover} alt={`${d.album} by ${d.artist}`} />
+        ) : (
+          <div class="listen-card__art-fallback" style="min-height: 280px">
+            <span>{d.artist}</span>
+            <span>{d.album}</span>
+          </div>
+        )}
+      </div>
+      <div class="review__meta">
+        <p class="eyebrow">Listened {fmtDate(d.listened)}</p>
+        <h1 class="review__artist">{d.artist}</h1>
+        <p class="review__album">
+          <em>{d.album}</em>{d.year ? ` · ${d.year}` : ''}
+        </p>
+        <p class="review__score" aria-label={`Score ${score} out of ten`}>
+          <span class="review__score-num">{score}</span>
+          <span class="review__score-denom">/10</span>
+        </p>
+        {d.tags.length > 0 && <p class="entry__tags">{d.tags.map((t) => <span>{t}</span>)}</p>}
+        <p class="eyebrow review__links">
+          {d.appleMusic && <a href={d.appleMusic} target="_blank" rel="noopener">Apple Music ↗</a>}
+          {d.spotify && <a href={d.spotify} target="_blank" rel="noopener">Spotify ↗</a>}
+        </p>
+      </div>
+    </div>
+
+    {embed && (
+      <div class="embed embed--apple-music" style="margin-block: var(--space-5)">
+        <iframe
+          allow="autoplay *; encrypted-media *; clipboard-write"
+          height="175"
+          loading="lazy"
+          sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+          src={embed}
+          title="Apple Music player"
+        ></iframe>
+      </div>
+    )}
+
+    <div class="prose review__body">
+      <Content components={postComponents} />
+    </div>
+
+    <nav class="article__foot">
+      <a href="/listening">← All albums</a>
+      <a href="/">Journal</a>
+    </nav>
+  </article>
+</Base>

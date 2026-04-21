@@ -1,0 +1,31 @@
+---
+interface Props {
+  id: string; // "{user}/{hash}" or just "{hash}"
+}
+
+const { id } = Astro.props;
+
+let html: string | null = null;
+let stylesheet: string | null = null;
+try {
+  const res = await fetch(`https://gist.github.com/${id}.json`, {
+    headers: { 'User-Agent': 'sound-blog' },
+  });
+  if (res.ok) {
+    const data = (await res.json()) as { div: string; stylesheet: string };
+    html = data.div;
+    stylesheet = data.stylesheet;
+  }
+} catch {}
+---
+
+{stylesheet && <link rel="stylesheet" href={stylesheet} />}
+{html ? (
+  <div class="gist-embed" set:html={html}></div>
+) : (
+  <p class="gh-card gh-card--fallback">
+    <a href={`https://gist.github.com/${id}`} target="_blank" rel="noopener noreferrer">
+      View gist: {id}
+    </a>
+  </p>
+)}

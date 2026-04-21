@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getCollection, render } from 'astro:content';
+import { postComponents } from '../../lib/post-components';
 
 export async function getStaticPaths() {
   const builds = await getCollection('builds');
@@ -38,7 +39,7 @@ const fmtDate = (d: Date) =>
     </header>
 
     <div class="prose">
-      <Content />
+      <Content components={postComponents} />
     </div>
 
     <nav class="article__foot">

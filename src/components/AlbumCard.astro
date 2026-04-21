@@ -1,0 +1,50 @@
+---
+import { lookupAppleMusic } from '../lib/apple-music';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'listens'>;
+  featured?: boolean;
+}
+
+const { entry, featured = false } = Astro.props;
+const d = entry.data;
+
+let cover = d.cover ?? null;
+let resolvedArtist = d.artist;
+let resolvedAlbum = d.album;
+let resolvedYear = d.year;
+
+if (!cover && d.appleMusic) {
+  const info = await lookupAppleMusic(d.appleMusic);
+  if (info?.artwork) cover = info.artwork;
+  if (!d.year && info?.year) resolvedYear = info.year;
+}
+
+const score = d.score.toFixed(1);
+---
+
+<a
+  class:list={['listen-card', featured && 'listen-card--featured']}
+  href={`/listening/${entry.id}/`}
+  aria-label={`${d.artist} — ${d.album}, score ${score}`}
+>
+  <div class="listen-card__art">
+    {cover ? (
+      <img src={cover} alt={`${d.album} by ${d.artist}`} loading="lazy" />
+    ) : (
+      <div class="listen-card__art-fallback">
+        <span>{d.artist}</span>
+        <span>{d.album}</span>
+      </div>
+    )}
+    <span class="listen-card__score" aria-hidden="true">{score}</span>
+    {d.current && <span class="listen-card__spin">Now spinning</span>}
+  </div>
+  <div class="listen-card__meta">
+    <p class="listen-card__artist">{resolvedArtist}</p>
+    <p class="listen-card__album">
+      {resolvedAlbum}{resolvedYear ? ` · ${resolvedYear}` : ''}
+    </p>
+  </div>
+</a>

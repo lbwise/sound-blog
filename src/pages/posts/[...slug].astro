@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getCollection, render } from 'astro:content';
+import { postComponents } from '../../lib/post-components';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts', (p) => !p.data.draft);
@@ -50,7 +51,7 @@ const num = String(post.data.number ?? index).padStart(3, '0');
     </header>
 
     <div class="prose">
-      <Content />
+      <Content components={postComponents} />
     </div>
 
     <nav class="article__foot" aria-label="Post navigation">
